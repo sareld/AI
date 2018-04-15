@@ -73,18 +73,23 @@ class Node:
 
 def generalSearch(problem, fringe, searchType, h = None):
     closed = []
-    startNode = Node(problem.get_start_state(), None, [])
+    try:
+        startCost = problem.get_cost_of_actions(problem.actions)
+    except:
+        startCost = 0
+
+    startNode = Node(problem.get_start_state(), None, [], startCost)
     if searchType == DFS or searchType == BFS:
         fringe.push(startNode)
     else:
-        fringe.push(startNode, None)
+        fringe.push(startNode, startCost)
 
     while not fringe.isEmpty():
         currentNode = fringe.pop()
         state = currentNode.getState()
         path = currentNode.getPath()
         cost = currentNode.getCost()
-        if (problem.is_goal_state(state)):
+        if problem.is_goal_state(state):
             return path
         if state not in closed:
             successors = problem.get_successors(state)
@@ -95,14 +100,15 @@ def generalSearch(problem, fringe, searchType, h = None):
                         fringe.push(newNode)
                     elif searchType == UCS:
                         newNode = Node(s[0], s[1], path + [s[1]], cost + s[2])
-                        fringe.push(newNode, -newNode.getCost())
+                        fringe.push(newNode, newNode.getCost())
                     else:
                         #print(cost ,h(s[0],problem))
-                        #print(h(state,problem),h(s[0],problem))
+                        # print(h(state,problem),h(s[0],problem))
                         if(h(state,problem) > cost + h(s[0],problem)):
+                            print(h(state, problem), cost, h(s[0], problem))
                             print("############################")
-                        newNode = Node(s[0], s[1], path + [s[1]], cost + h(s[0],problem) + s[2])
-                        fringe.push(newNode, -(newNode.getCost() + h(s[0],problem)))
+                        newNode = Node(s[0], s[1], path + [s[1]], cost + s[2])
+                        fringe.push(newNode, (newNode.getCost() + h(s[0],problem)))
             closed.append(state)
     return []
 
