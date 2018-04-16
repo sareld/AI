@@ -98,155 +98,13 @@ class BlokusCornersProblem(SearchProblem):
         return sum([action.piece.get_num_tiles() for action in actions])
 
 
-def manhattan_distance1(a, b):
-    ax, ay = a
-    bx, by = b
-    return abs(bx - ax) + abs(by - ay)
-
-def manhattan_distance2(a, b):
-    ax, ay = a
-    bx, by = b
-    delta_x = abs(ax - bx)
-    delta_y = abs(ay - by)
-    return min(delta_x, delta_y) * np.sqrt(2) + abs(delta_x - delta_y)
-
-
-def manhattan_distance(a, b):
+def ChebyshevDistance(a, b):
     ax, ay = a
     bx, by = b
     x_dist = abs(ax - bx)
     y_dist = abs(ay - by)
     return max(y_dist, x_dist)
 
-
-
-# def blokus_corners_heuristic2(state, problem):
-#     """
-#     Your heuristic for the BlokusCornersProblem goes here.
-#
-#     This heuristic must be consistent to ensure correctness.  First, try to come up
-#     with an admissible heuristic; almost all admissible heuristics will be consistent
-#     as well.
-#
-#     If using A* ever finds a solution that is worse uniform cost search finds,
-#     your heuristic is *not* consistent, and probably not admissible!  On the other hand,
-#     inadmissible or inconsistent heuristics may find optimal solutions, so be careful.
-#     """
-#     boardState = state.state
-#     row,col = boardState.shape
-#     coordinates = np.argwhere(boardState != -1)
-#     corners = np.array([[0,col-1],
-#                         [row-1,0],
-#                         [row-1,col-1]])
-#     freeCorners = []
-#     for cor in corners:
-#         if boardState[tuple(cor)] == -1:
-#             freeCorners.append(cor)
-#
-#     if coordinates.size != 0:
-#         if len(freeCorners) != 0:
-#             minDist = np.sum([manhattan_distance(coordinates[0], corn) for corn in freeCorners])
-#             for c in coordinates[1:]:
-#                 distSum = np.sum([manhattan_distance(c, corn) for corn in freeCorners])
-#                 minDist = min(minDist,distSum)
-#
-#             return minDist
-#         else:
-#             return 0
-#     else:
-#         return 0
-#
-#
-# def blokus_corners_heuristic1(state, problem):
-#     """
-#     Your heuristic for the BlokusCornersProblem goes here.
-#
-#     This heuristic must be consistent to ensure correctness.  First, try to come up
-#     with an admissible heuristic; almost all admissible heuristics will be consistent
-#     as well.
-#
-#     If using A* ever finds a solution that is worse uniform cost search finds,
-#     your heuristic is *not* consistent, and probably not admissible!  On the other hand,
-#     inadmissible or inconsistent heuristics may find optimal solutions, so be careful.
-#     """
-#     boardState = state.state
-#     row,col = boardState.shape
-#     coordinates = np.argwhere(boardState != -1)
-#     corners = np.array([[0,col-1],
-#                         [row-1,0],
-#                         [row-1,col-1]])
-#     freeCorners = []
-#     distSum = 0
-#
-#     for corner in corners:
-#         if boardState[tuple(corner)] == -1:
-#             freeCorners.append(corner)
-#
-#     for corner in freeCorners:
-#         if len(coordinates) != 0:
-#             distSum += np.min([manhattan_distance(corner, c) for c in coordinates])
-#
-#     # if coordinates.size != 0:
-#     #     if len(freeCorners) != 0:
-#     #         # minDist = np.sum([manhattan_distance(coordinates[0], corn) for corn in freeCorners])
-#     #
-#     #         for corn in freeCorners:
-#     #             distSum += np.min([manhattan_distance(corn, c) for c in coordinates])
-#     #             # minDist = min(minDist,distSum)
-#     #
-#     #         # for c in coordinates[1:]:
-#     #         #     distSum = np.sum([manhattan_distance(c, corn) for corn in freeCorners])
-#     #         #     minDist = min(minDist,distSum)
-#     #
-#     #         return distSum
-#     #     else:
-#     #         return 0
-#     # else:
-#     #     return 0
-#     return distSum
-
-
-def blokus_corners_heuristic1(state, problem):
-    """
-    Your heuristic for the BlokusCornersProblem goes here.
-
-    This heuristic must be consistent to ensure correctness.  First, try to come up
-    with an admissible heuristic; almost all admissible heuristics will be consistent
-    as well.
-
-    If using A* ever finds a solution that is worse uniform cost search finds,
-    your heuristic is *not* consistent, and probably not admissible!  On the other hand,
-    inadmissible or inconsistent heuristics may find optimal solutions, so be careful.
-    """
-    boardState = state.state
-    row, col = boardState.shape
-
-    legal_moves = state.get_legal_moves(0)
-
-    coordinates = list(set([(move.x, move.y) for move in legal_moves]))
-
-    #coordinates = np.argwhere(boardState != -1)
-    corners = np.array([[0, col - 1],
-                        [row - 1, 0],
-                        [row - 1, col - 1]])
-    freeCorners = []
-    distSum = 0
-
-    for cor in corners:
-        if boardState[tuple(cor)] == -1:
-            freeCorners.append(cor)
-
-    if len(coordinates) != 0:
-        if len(freeCorners) != 0:
-            minDist = np.min([manhattan_distance(coordinates[0], corn) for corn in freeCorners])
-            for c in coordinates[1:]:
-                distSum = np.min([manhattan_distance(c, corn) for corn in freeCorners])
-                minDist = min(minDist, distSum)
-            return minDist
-        else:
-            return 0
-    else:
-        return 0
 
 def blokus_corners_heuristic(state, problem):
     """
@@ -262,16 +120,11 @@ def blokus_corners_heuristic(state, problem):
     """
     boardState = state.state
     row, col = boardState.shape
-
-    legal_moves = state.get_legal_moves(0)
-
-    # coordinates = list(set([(move.x, move.y) for move in legal_moves]))
-
     coordinates = np.argwhere(boardState != -1)
+    freeCorners = []
     corners = np.array([[0, col - 1],
                         [row - 1, 0],
                         [row - 1, col - 1]])
-    freeCorners = []
 
     for cor in corners:
         if boardState[tuple(cor)] == -1:
@@ -280,7 +133,7 @@ def blokus_corners_heuristic(state, problem):
     maxDist = 0
     for corner in freeCorners:
         if len(coordinates) != 0:
-            dist = np.min([manhattan_distance(corner, c) for c in coordinates])
+            dist = np.min([ChebyshevDistance(corner, c) for c in coordinates])
             maxDist = max(maxDist,dist)
         else:
             return 1
@@ -332,14 +185,10 @@ class BlokusCoverProblem(SearchProblem):
         return sum([action.piece.get_num_tiles() for action in actions])
 
 
-
-
 def blokus_cover_heuristic(state, problem):
     boardState = state.state
-    row, col = boardState.shape
     coordinates = np.argwhere(boardState != -1)
     targets = np.array(problem.targets)
-    distMin = 0
 
     freeTargets = []
 
@@ -350,7 +199,7 @@ def blokus_cover_heuristic(state, problem):
     maxDist = 0
     for target in freeTargets:
         if len(coordinates) != 0:
-            dist = np.min([manhattan_distance(target, c) for c in coordinates])
+            dist = np.min([ChebyshevDistance(target, c) for c in coordinates])
             maxDist = max(maxDist, dist)
         else:
             return 1
@@ -378,10 +227,8 @@ class ClosestLocationSearch:
 
     def sortFunction(self):
         targetDict = dict()
-
         for target in self.targets:
-            targetDict[target] = manhattan_distance(self.startingPoint, target)
-
+            targetDict[target] = ChebyshevDistance(self.startingPoint, target)
         return OrderedDict(sorted(targetDict.items(), key=lambda x: x[1]))
 
     def solve(self):
@@ -406,20 +253,15 @@ class ClosestLocationSearch:
         current_state = self.board.__copy__()
         backtrace = []
 
-        #sortedTargets = sorted(self.targets)
         sortedTargets = self.sortFunction()
 
         problem = BlokusCoverProblem(current_state.board_w, current_state.board_h,
                                      current_state.piece_list, self.startingPoint)
         for target in sortedTargets:
             problem.targets = [target]
-            #actions = a_star_search(problem, blokus_cover_heuristic)
             actions = ucs(problem)
             problem.actions.extend(actions)
-            if len(actions) == 0:
-                print(str(target) +" no actions")
-            else:
-                print(str(target) + " actions")
+
             for action in actions:
                 problem.board.add_move(0, action)
             backtrace.extend(actions)
