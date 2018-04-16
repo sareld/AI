@@ -98,10 +98,25 @@ class BlokusCornersProblem(SearchProblem):
         return sum([action.piece.get_num_tiles() for action in actions])
 
 
-def manhattan_distance(a, b):
+def manhattan_distance1(a, b):
     ax, ay = a
     bx, by = b
     return abs(bx - ax) + abs(by - ay)
+
+def manhattan_distance2(a, b):
+    ax, ay = a
+    bx, by = b
+    delta_x = abs(ax - bx)
+    delta_y = abs(ay - by)
+    return min(delta_x, delta_y) * np.sqrt(2) + abs(delta_x - delta_y)
+
+
+def manhattan_distance(a, b):
+    ax, ay = a
+    bx, by = b
+    x_dist = abs(ax - bx)
+    y_dist = abs(ay - by)
+    return max(y_dist, x_dist)
 
 
 
@@ -191,6 +206,48 @@ def manhattan_distance(a, b):
 #     return distSum
 
 
+def blokus_corners_heuristic1(state, problem):
+    """
+    Your heuristic for the BlokusCornersProblem goes here.
+
+    This heuristic must be consistent to ensure correctness.  First, try to come up
+    with an admissible heuristic; almost all admissible heuristics will be consistent
+    as well.
+
+    If using A* ever finds a solution that is worse uniform cost search finds,
+    your heuristic is *not* consistent, and probably not admissible!  On the other hand,
+    inadmissible or inconsistent heuristics may find optimal solutions, so be careful.
+    """
+    boardState = state.state
+    row, col = boardState.shape
+
+    legal_moves = state.get_legal_moves(0)
+
+    coordinates = list(set([(move.x, move.y) for move in legal_moves]))
+
+    #coordinates = np.argwhere(boardState != -1)
+    corners = np.array([[0, col - 1],
+                        [row - 1, 0],
+                        [row - 1, col - 1]])
+    freeCorners = []
+    distSum = 0
+
+    for cor in corners:
+        if boardState[tuple(cor)] == -1:
+            freeCorners.append(cor)
+
+    if len(coordinates) != 0:
+        if len(freeCorners) != 0:
+            minDist = np.min([manhattan_distance(coordinates[0], corn) for corn in freeCorners])
+            for c in coordinates[1:]:
+                distSum = np.min([manhattan_distance(c, corn) for corn in freeCorners])
+                minDist = min(minDist, distSum)
+            return minDist
+        else:
+            return 0
+    else:
+        return 0
+
 def blokus_corners_heuristic(state, problem):
     """
     Your heuristic for the BlokusCornersProblem goes here.
@@ -206,28 +263,29 @@ def blokus_corners_heuristic(state, problem):
     boardState = state.state
     row, col = boardState.shape
 
+    legal_moves = state.get_legal_moves(0)
+
+    # coordinates = list(set([(move.x, move.y) for move in legal_moves]))
+
     coordinates = np.argwhere(boardState != -1)
     corners = np.array([[0, col - 1],
                         [row - 1, 0],
                         [row - 1, col - 1]])
     freeCorners = []
-    distSum = 0
 
     for cor in corners:
         if boardState[tuple(cor)] == -1:
             freeCorners.append(cor)
 
-    if coordinates.size != 0:
-        if len(freeCorners) != 0:
-            minDist = np.sum([manhattan_distance(coordinates[0], corn) for corn in freeCorners])
-            for c in coordinates[1:]:
-                distSum = np.sum([manhattan_distance(c, corn) for corn in freeCorners])
-                minDist = min(minDist, distSum)
-            return minDist
+    maxDist = 0
+    for corner in freeCorners:
+        if len(coordinates) != 0:
+            dist = np.min([manhattan_distance(corner, c) for c in coordinates])
+            maxDist = max(maxDist,dist)
         else:
-            return 0
-    else:
-        return np.sum([manhattan_distance((0,0), corn) for corn in freeCorners])
+            return 1
+
+    return maxDist + len(freeCorners)
 
 
 class BlokusCoverProblem(SearchProblem):
@@ -274,57 +332,6 @@ class BlokusCoverProblem(SearchProblem):
         return sum([action.piece.get_num_tiles() for action in actions])
 
 
-def blokus_cover_heuristic1(state, problem):
-    boardState = state.state
-    coordinates = np.argwhere(boardState != -1)
-    targets = np.array(problem.targets)
-
-    freetargets = []
-    for cor in targets:
-        if boardState[tuple(cor)] == -1:
-            freetargets.append(cor)
-
-    if coordinates.size != 0:
-        if len(freetargets) != 0:
-            minDist = np.average([manhattan_distance(coordinates[0], corn) for corn in freetargets])
-            for c in coordinates[1:]:
-                distMin = np.average([manhattan_distance(c, corn) for corn in freetargets])
-                minDist = min(minDist, distMin)
-            return minDist
-        else:
-            return 0
-    else:
-        return 0
-
-
-
-def blokus_cover_heuristic3(state, problem):
-    boardState = state.state
-    row, col = boardState.shape
-    coordinates = np.argwhere(boardState != -1)
-    targets = np.array(problem.targets)
-    distMin = 0
-
-    freetargets = []
-    for cor in targets:
-        if boardState[tuple(cor)] == -1:
-            freetargets.append(cor)
-
-    if coordinates.size != 0:
-        print("coordinates.size != 0")
-        if len(freetargets) != 0:
-            minDist = np.max([manhattan_distance(coordinates[0], corn) for corn in freetargets]) #TODO think of a better way to initial minDist
-            for c in coordinates:
-                distMin += np.max([manhattan_distance(c, corn) for corn in freetargets])
-                minDist = min(minDist, distMin)
-            return minDist
-        else:
-            return 0
-    else:
-        if len(freetargets) <= 1:
-            return 0
-        return np.min([manhattan_distance(freetargets[0], corn) for corn in freetargets[1:]])
-
 
 
 def blokus_cover_heuristic(state, problem):
@@ -334,29 +341,22 @@ def blokus_cover_heuristic(state, problem):
     targets = np.array(problem.targets)
     distMin = 0
 
-    freetargets = []
+    freeTargets = []
+
     for cor in targets:
         if boardState[tuple(cor)] == -1:
-            freetargets.append(cor)
+            freeTargets.append(cor)
 
-    if len(freetargets) == 0:
-        return 0
-
-    if coordinates.size == 0:  # only at the beginning
-        if len(freetargets) <= 1:
-            # actions = state.get_legal_moves(0)
-            # return np.min([manhattan_distance(freetargets[0], (action.x, action.y)) for action in actions])
-            # corners = np.array([[0,0], [0, col - 1], [row - 1, 0], [row - 1, col - 1]])
-            # return np.min([manhattan_distance(freetargets[0], corn) for corn in corners])
-            return 0
+    maxDist = 0
+    for target in freeTargets:
+        if len(coordinates) != 0:
+            dist = np.min([manhattan_distance(target, c) for c in coordinates])
+            maxDist = max(maxDist, dist)
         else:
-            return np.min([manhattan_distance(freetargets[0], corn) for corn in freetargets[1:]])
+            return 1
 
-    minDist = np.max([manhattan_distance(coordinates[0], corn) for corn in freetargets]) #TODO think of a better way to initial minDist
-    for c in coordinates:
-        distMin += np.max([manhattan_distance(c, corn) for corn in freetargets])
-        minDist = min(minDist, distMin)
-    return minDist
+    return maxDist
+
 
 class ClosestLocationSearch:
     """
@@ -406,15 +406,15 @@ class ClosestLocationSearch:
         current_state = self.board.__copy__()
         backtrace = []
 
-        sortedTargets = sorted(self.targets)
-        # sortedTargets = self.sortFunction()
+        #sortedTargets = sorted(self.targets)
+        sortedTargets = self.sortFunction()
 
         problem = BlokusCoverProblem(current_state.board_w, current_state.board_h,
                                      current_state.piece_list, self.startingPoint)
         for target in sortedTargets:
             problem.targets = [target]
-            actions = a_star_search(problem, blokus_cover_heuristic)
-            # actions = ucs(problem)
+            #actions = a_star_search(problem, blokus_cover_heuristic)
+            actions = ucs(problem)
             problem.actions.extend(actions)
             if len(actions) == 0:
                 print(str(target) +" no actions")

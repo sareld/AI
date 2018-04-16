@@ -108,7 +108,7 @@ def generalSearch(problem, fringe, searchType, h = None):
                             a = h(state, problem)
                             b= h(s[0],problem)
                             c = cost
-                            print(h(state, problem), s[2], h(s[0], problem))
+                            print(h(state, problem), cost ,s[2], h(s[0], problem))
                             print("############################")
                         newNode = Node(s[0], s[1], path + [s[1]], cost + s[2])
                         fringe.push(newNode, (newNode.getCost() + h(s[0],problem)))
